@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>egui-docs — an interactive guide to egui 0.36.2</title>
+    <meta name="description" content="Interactive, explained documentation for egui: live widgets, their settings, and the code that produces them." />
+
+    <!--
+      wasm-opt's bundled binaryen is older than the wasm features rustc emits,
+      so the post-link pass has to be told they are allowed. Without these it
+      fails with "memory.copy operations require bulk memory operations".
+    -->
+    <link data-trunk rel="rust" data-wasm-opt="2"
+        data-wasm-opt-params="--enable-bulk-memory --enable-bulk-memory-opt --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals --enable-reference-types --enable-multivalue" />
+
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #0b0b0c;
+        }
+
+        /* eframe sizes the canvas itself; it just has to fill the page. */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #loading_text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font: 16px system-ui, sans-serif;
+            color: #9a9a9e;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="egui_docs_canvas"></canvas>
+    <div id="loading_text">Loading egui-docs…</div>
+</body>
+
+</html>

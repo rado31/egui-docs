@@ -1,0 +1,9 @@
+[build]
+# Everything is served from the repo root path by default. Building for GitHub
+# Pages under /<repo>/ needs `trunk build --release --public-url /egui-docs/`.
+target = "index.html"
+dist = "dist"
+
+[serve]
+port = 8080
+open = false

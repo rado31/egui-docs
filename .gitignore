@@ -1,0 +1,7 @@
+/target
+/dist
+
+# Generated knowledge graph. Machine-local: .graphify_python and .graphify_root
+# hold absolute paths, and cache/ churns on every run.
+# Rebuild with `/graphify .`
+/graphify-out
