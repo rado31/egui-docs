@@ -30,6 +30,11 @@ egui_extras = "=0.36.2"
 wasm-bindgen-futures = "0.4"
 log = "0.4"
 
+# Native build only: somewhere for egui's and eframe's `log` output to go. On
+# the web `eframe::WebLogger` already routes it to the browser console.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger = "0.11"
+
 # Lets the UI be rendered and inspected headlessly, without a window:
 # `cargo test` renders each lesson to a PNG under `tests/snapshots/`.
 [dev-dependencies]

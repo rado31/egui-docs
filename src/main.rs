@@ -4,6 +4,13 @@ use egui_docs::app::DocsApp;
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
+    // egui and eframe report problems through `log`, and without a logger those
+    // messages go nowhere: a missing `links` feature made every hyperlink do
+    // nothing while warning about it to an audience of no one. `warn` by default
+    // keeps startup quiet and still surfaces that class of bug; `RUST_LOG=debug`
+    // (or `RUST_LOG=egui=debug`) when more is wanted.
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
+
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default().with_inner_size([1280.0, 820.0]),
         ..Default::default()
