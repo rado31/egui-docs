@@ -3,6 +3,7 @@
 //! Order within a section is the order lessons are listed here.
 
 mod button;
+mod id;
 mod response;
 
 use crate::lesson::Lesson;
@@ -10,6 +11,7 @@ use crate::lesson::Lesson;
 pub fn all() -> Vec<Box<dyn Lesson>> {
     vec![
         Box::new(response::ResponseLesson::default()),
+        Box::new(id::IdLesson::default()),
         Box::new(button::ButtonLesson::default()),
     ]
 }

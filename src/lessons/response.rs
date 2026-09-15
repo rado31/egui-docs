@@ -6,7 +6,7 @@
 use egui::{Sense, Vec2};
 
 use crate::code::{CodeBuilder, indent};
-use crate::lesson::{Lesson, Link, Note, Section};
+use crate::lesson::{Lesson, Note, Section};
 use crate::ui::{Pulse, event_flag, state_flag};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -273,20 +273,11 @@ impl Lesson for ResponseLesson {
         ]
     }
 
-    fn links(&self) -> &'static [Link] {
+    fn references(&self) -> &'static [&'static str] {
         &[
-            Link {
-                label: "docs.rs — Response",
-                url: "https://docs.rs/egui/0.36.2/egui/struct.Response.html",
-            },
-            Link {
-                label: "docs.rs — Sense",
-                url: "https://docs.rs/egui/0.36.2/egui/struct.Sense.html",
-            },
-            Link {
-                label: "source — response.rs",
-                url: "https://github.com/emilk/egui/blob/0.36.2/crates/egui/src/response.rs",
-            },
+            "egui::Response",
+            "egui::Sense",
+            "crates/egui/src/response.rs",
         ]
     }
 }

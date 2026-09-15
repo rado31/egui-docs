@@ -34,6 +34,11 @@ fn lesson_response() {
 }
 
 #[test]
+fn lesson_id() {
+    render_lesson("Id", "lesson_id");
+}
+
+#[test]
 fn lesson_button() {
     render_lesson("Button", "lesson_button");
 }

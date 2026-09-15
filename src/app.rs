@@ -82,6 +82,61 @@ fn zoom_controls(ui: &mut egui::Ui) {
     }
 }
 
+/// Lay out a paragraph of lesson prose.
+///
+/// Two bits of markup are understood: `` `backticks` `` for inline code and
+/// `*asterisks*` for emphasis. That is the whole grammar — egui parses no
+/// markup by itself, so a body string written with either would otherwise show
+/// the punctuation. Building a `LayoutJob` is how several fonts live inside one
+/// paragraph: every `append` carries its own `TextFormat`, and the job still
+/// wraps as a single unit.
+fn prose(ui: &egui::Ui, text: &str) -> egui::text::LayoutJob {
+    let body = egui::TextStyle::Body.resolve(ui.style());
+    let mono = egui::TextStyle::Monospace.resolve(ui.style());
+    let text_color = ui.visuals().text_color();
+    let code_color = ui.visuals().strong_text_color();
+    let code_background = ui.visuals().code_bg_color;
+
+    let mut job = egui::text::LayoutJob::default();
+    // Without a wrap width the job is laid out on one endless line.
+    job.wrap.max_width = ui.available_width();
+
+    let mut push = |piece: &str, is_code: bool, italics: bool| {
+        if piece.is_empty() {
+            return;
+        }
+        job.append(
+            piece,
+            0.0,
+            egui::TextFormat {
+                font_id: if is_code { mono.clone() } else { body.clone() },
+                color: if is_code { code_color } else { text_color },
+                background: if is_code {
+                    code_background
+                } else {
+                    egui::Color32::TRANSPARENT
+                },
+                italics,
+                ..Default::default()
+            },
+        );
+    };
+
+    // Odd pieces are what stood between a pair of backticks. Emphasis is only
+    // looked for outside them, so an asterisk inside code stays an asterisk.
+    for (index, piece) in text.split('`').enumerate() {
+        if index % 2 == 1 {
+            push(piece, true, false);
+        } else {
+            for (index, part) in piece.split('*').enumerate() {
+                push(part, false, index % 2 == 1);
+            }
+        }
+    }
+
+    job
+}
+
 pub struct DocsApp {
     lessons: Vec<Box<dyn Lesson>>,
     selected: usize,
@@ -200,17 +255,27 @@ impl DocsApp {
 
                 for note in lesson.notes() {
                     ui.label(egui::RichText::new(note.heading).strong());
-                    ui.label(note.body);
+                    ui.label(prose(ui, note.body));
                     ui.add_space(10.0);
                 }
 
-                let links = lesson.links();
-                if !links.is_empty() {
+                let references = lesson.references();
+                if !references.is_empty() {
                     ui.separator();
                     ui.horizontal_wrapped(|ui| {
-                        for link in links {
-                            ui.hyperlink_to(link.label, link.url);
-                            ui.label("·");
+                        ui.label("Look up:");
+                        for reference in references {
+                            // `Extend` so a name is never broken across lines:
+                            // `horizontal_wrapped` moves the whole chip to the
+                            // next row instead.
+                            ui.add(
+                                egui::Label::new(
+                                    egui::RichText::new(*reference)
+                                        .monospace()
+                                        .background_color(ui.visuals().code_bg_color),
+                                )
+                                .wrap_mode(egui::TextWrapMode::Extend),
+                            );
                         }
                     });
                 }

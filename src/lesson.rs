@@ -58,12 +58,6 @@ pub struct Note {
     pub body: &'static str,
 }
 
-/// A link out to the official docs or to egui's own source.
-pub struct Link {
-    pub label: &'static str,
-    pub url: &'static str,
-}
-
 pub trait Lesson {
     fn title(&self) -> &'static str;
 
@@ -86,7 +80,13 @@ pub trait Lesson {
         &[]
     }
 
-    fn links(&self) -> &'static [Link] {
+    /// Names to look up — in `docs.rs`, in your editor, or in egui's source.
+    ///
+    /// Deliberately not URLs. A link pinned to one release breaks on the next,
+    /// and a hand-written docs.rs path is easy to get wrong in a way nothing
+    /// checks: `egui::Button` is re-exported into the crate root, but its page
+    /// only exists under `egui/widgets/`. A name works in every version.
+    fn references(&self) -> &'static [&'static str] {
         &[]
     }
 }

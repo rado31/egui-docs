@@ -7,7 +7,7 @@
 use egui::{Color32, Sense, Stroke, Vec2};
 
 use crate::code::{CodeBuilder, color_code, f32_code, indent};
-use crate::lesson::{Lesson, Link, Note, Section};
+use crate::lesson::{Lesson, Note, Section};
 use crate::ui::{Pulse, event_flag, state_flag};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -321,20 +321,12 @@ impl Lesson for ButtonLesson {
         ]
     }
 
-    fn links(&self) -> &'static [Link] {
+    fn references(&self) -> &'static [&'static str] {
         &[
-            Link {
-                label: "docs.rs — Button",
-                url: "https://docs.rs/egui/0.36.2/egui/struct.Button.html",
-            },
-            Link {
-                label: "docs.rs — Response",
-                url: "https://docs.rs/egui/0.36.2/egui/struct.Response.html",
-            },
-            Link {
-                label: "source — widgets/button.rs",
-                url: "https://github.com/emilk/egui/blob/0.36.2/crates/egui/src/widgets/button.rs",
-            },
+            "egui::Button",
+            "egui::Response",
+            "egui::IntoAtoms",
+            "crates/egui/src/widgets/button.rs",
         ]
     }
 }

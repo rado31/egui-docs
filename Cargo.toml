@@ -10,10 +10,16 @@ repository = "https://github.com/rado31/egui-docs"
 # On each egui release: bump all three, run `cargo check`, fix what broke, update lessons.
 [dependencies]
 egui = "=0.36.2"
+# `default-features = false` only to keep the wgpu backend out — we render with
+# glow. Everything else below is part of eframe's own default set and has to be
+# listed back explicitly, or it is silently lost.
 eframe = { version = "=0.36.2", default-features = false, features = [
+    "accesskit",          # screen-reader support (native)
     "default_fonts",
-    "glow",     # WebGL in the browser, OpenGL natively
+    "glow",               # WebGL in the browser, OpenGL natively
+    "links",              # without this, hyperlinks do nothing on native
     "wayland",
+    "web_screen_reader",
     "x11",
 ] }
 egui_extras = "=0.36.2"

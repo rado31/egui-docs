@@ -5,3 +5,10 @@
 # hold absolute paths, and cache/ churns on every run.
 # Rebuild with `/graphify .`
 /graphify-out
+
+# egui_kittest scratch files: a backup written by UPDATE_SNAPSHOTS, and the
+# rendering plus diff produced by a failed comparison. Only the baselines belong
+# in git.
+tests/snapshots/*.old.png
+tests/snapshots/*.new.png
+tests/snapshots/*.diff.png
