@@ -2,6 +2,9 @@
 name = "egui-docs"
 version = "0.1.0"
 edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "An interactive, explained guide to egui"
+repository = "https://github.com/rado31/egui-docs"
 
 # Pinned to a single egui release on purpose: every lesson documents *this* API.
 # On each egui release: bump all three, run `cargo check`, fix what broke, update lessons.
