@@ -2,6 +2,8 @@
 
 An interactive, explained guide to [`egui`](https://github.com/emilk/egui).
 
+**[Try it in your browser →](https://rado31.github.io/egui-docs/)**
+
 Every topic is one page with four things on it at once: a **live widget**, the **settings**
 that drive it, the **code** that would produce exactly what you see, and an **explanation**
 of why it works that way.
