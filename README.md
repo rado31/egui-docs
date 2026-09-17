@@ -25,14 +25,14 @@ else in egui is built on. This project is an attempt at the missing middle.
 
 ## Status
 
-Early. Two lessons exist:
+Early. Three lessons exist:
 
-- **Fundamentals** — `Response`, `Id`
+- **Fundamentals** — `Response`, `Ui`, `Id`
 - **Widgets** — `Button`
 
-Planned: `Ui`, `Atom`, layout, style & theme, text & fonts, input & interaction,
-painting, containers & windows, state & persistence. The sidebar lists them greyed out, so
-the shape of the guide is visible while it is being built.
+Planned: `Atom`, layout, style & theme, text & fonts, input & interaction, painting,
+containers & windows, memory & state. The sidebar lists them greyed out, so the shape of
+the guide is visible while it is being built.
 
 Pinned to **egui 0.36.2**. That version changed a lot (`eframe::App::ui` replaced `update`,
 `Panel` replaced `SidePanel`/`TopBottomPanel`), so most egui material you will find online no

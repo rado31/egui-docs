@@ -47,7 +47,7 @@ impl Section {
             Self::Interaction => "Input & Interaction",
             Self::Painting => "Painting",
             Self::Containers => "Containers & Windows",
-            Self::State => "State & Persistence",
+            Self::State => "Memory & State",
         }
     }
 }

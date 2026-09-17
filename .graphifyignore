@@ -1,0 +1,4 @@
+# Rendered lesson snapshots. Everything in them is already in the code, and
+# describing them costs ~45k tokens each, on every UI change. Worse, a guess
+# made from a picture can overwrite the exact edge the AST took from source.
+tests/snapshots/
