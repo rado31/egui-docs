@@ -2,6 +2,7 @@
 //!
 //! Order within a section is the order lessons are listed here.
 
+mod atom;
 mod button;
 mod id;
 mod response;
@@ -14,6 +15,7 @@ pub fn all() -> Vec<Box<dyn Lesson>> {
         Box::new(response::ResponseLesson::default()),
         Box::new(ui::UiLesson::default()),
         Box::new(id::IdLesson::default()),
+        Box::new(atom::AtomLesson::default()),
         Box::new(button::ButtonLesson::default()),
     ]
 }

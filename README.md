@@ -25,12 +25,12 @@ else in egui is built on. This project is an attempt at the missing middle.
 
 ## Status
 
-Early. Three lessons exist:
+Early. Five lessons exist:
 
-- **Fundamentals** — `Response`, `Ui`, `Id`
+- **Fundamentals** — `Response`, `Ui`, `Id`, `Atom`
 - **Widgets** — `Button`
 
-Planned: `Atom`, layout, style & theme, text & fonts, input & interaction, painting,
+Planned: layout, style & theme, text & fonts, input & interaction, painting,
 containers & windows, memory & state. The sidebar lists them greyed out, so the shape of
 the guide is visible while it is being built.
 

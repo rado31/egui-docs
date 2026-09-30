@@ -51,6 +51,19 @@ UPDATE_SNAPSHOTS=1 cargo test   # accept the current rendering as the new baseli
 The snapshots are how layout gets verified: read the PNG rather than asking the user for a
 screenshot. A pure refactor must leave them unchanged.
 
+## Checking a lesson live
+
+Snapshots verify layout. For interaction and accessibility, drive the real app through the
+`egui` MCP server ([egui_mcp](https://github.com/rerun-io/kittest_inspector)):
+
+```sh
+EGUI_INSPECTION=1 cargo run --features eframe/inspection   # listens on 127.0.0.1:5719; then `attach`
+```
+
+The window must stay visible for screenshots (macOS). The accessible names in `widget_tree`
+are what a screen reader announces — snapshots cannot show them. Without the MCP server
+registered, snapshots are the whole check.
+
 ## Deliberate non-features
 
 - **No persistence.** eframe's `persistence` feature is off: theme, text size, open lesson,

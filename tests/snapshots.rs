@@ -44,6 +44,11 @@ fn lesson_id() {
 }
 
 #[test]
+fn lesson_atom() {
+    render_lesson("Atom", "lesson_atom");
+}
+
+#[test]
 fn lesson_button() {
     render_lesson("Button", "lesson_button");
 }
