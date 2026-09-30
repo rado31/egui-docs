@@ -66,9 +66,12 @@ pub fn indent(text: &str, levels: usize) -> String {
 }
 
 /// Turn a (translated, possibly multi-line) message into `//` comment lines,
-/// each ending in a newline. How long a line is stays the translator's call.
+/// each ending in a newline. A blank line becomes a bare `//`. How long a
+/// line is stays the translator's call.
 pub fn line_comments(text: &str) -> String {
-    text.lines().map(|line| format!("// {line}\n")).collect()
+    text.lines()
+        .map(|line| format!("{}\n", format!("// {line}").trim_end()))
+        .collect()
 }
 
 /// `Color32` as the literal you would type yourself.

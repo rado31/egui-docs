@@ -8,6 +8,10 @@ app-settings = Настройки
 app-code = Код
 app-copy = Копировать
 app-look-up = Искать:
+# Внизу каждого урока. `$lesson` — номер и название соседнего урока: `1.2 Response`.
+# Стрелки — ⏴ ⏵, потому что в шрифтах egui по умолчанию нет ← →.
+app-previous = ⏴ Назад: { $lesson }
+app-next = Далее: { $lesson } ⏵
 app-theme-light = Светлая тема
 app-theme-dark = Тёмная тема
 app-zoom-in = Крупнее  ({ $shortcut })

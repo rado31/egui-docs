@@ -124,6 +124,11 @@ fn prose(ui: &egui::Ui, text: &str) -> egui::text::LayoutJob {
     let text_color = ui.visuals().text_color();
     let code_color = ui.visuals().strong_text_color();
     let code_background = ui.visuals().code_bg_color;
+    // The font's own line height packs a paragraph tightly; half a line of air
+    // makes the notes much easier to read. Only prose gets it: a code span's
+    // background is as tall as its line height, so code keeps the font's own
+    // and is pinned to the top of the row, where the prose glyphs sit too.
+    let line_height = (body.size * 1.5).round();
 
     let mut job = egui::text::LayoutJob::default();
     // Without a wrap width the job is laid out on one endless line.
@@ -145,6 +150,8 @@ fn prose(ui: &egui::Ui, text: &str) -> egui::text::LayoutJob {
                     egui::Color32::TRANSPARENT
                 },
                 italics,
+                line_height: (!is_code).then_some(line_height),
+                valign: egui::Align::TOP,
                 ..Default::default()
             },
         );
@@ -254,6 +261,9 @@ impl DocsApp {
     /// plan for the guide stays visible.
     fn table_of_contents(&mut self, ui: &mut egui::Ui) {
         let tr = self.i18n.tr();
+        let titles: Vec<String> = (0..self.lessons.len())
+            .map(|index| self.numbered_title(index))
+            .collect();
         egui::Panel::left("toc")
             .resizable(true)
             .default_size(220.0)
@@ -268,7 +278,10 @@ impl DocsApp {
                             .map(|(index, _)| index)
                             .collect();
 
-                        let title = tr.get(section.title_id());
+                        // Empty sections are numbered too, so a number never
+                        // changes when an earlier section gets its first lesson.
+                        let title =
+                            format!("{}. {}", section.index() + 1, tr.get(section.title_id()));
                         if lessons.is_empty() {
                             ui.add_enabled(false, egui::Label::new(title));
                             continue;
@@ -279,7 +292,7 @@ impl DocsApp {
                             for index in lessons {
                                 let selected = index == self.selected;
                                 if ui
-                                    .selectable_label(selected, self.lessons[index].title(tr))
+                                    .selectable_label(selected, titles[index].as_str())
                                     .clicked()
                                 {
                                     self.selected = index;
@@ -309,67 +322,119 @@ impl DocsApp {
             });
     }
 
+    /// `1.2 Response`: the section's number, the lesson's place in it, its title.
+    fn numbered_title(&self, index: usize) -> String {
+        let section = self.lessons[index].section();
+        let place = self.lessons[..index]
+            .iter()
+            .filter(|lesson| lesson.section() == section)
+            .count()
+            + 1;
+        let title = self.lessons[index].title(self.i18n.tr());
+        format!("{}.{place} {title}", section.index() + 1)
+    }
+
     fn content(&mut self, ui: &mut egui::Ui) {
         let tr = self.i18n.tr();
+        // `lessons` is in reading order (see `Default`), so the neighbours in
+        // the Vec are the neighbours in the guide.
+        let previous = self
+            .selected
+            .checked_sub(1)
+            .map(|index| (index, self.numbered_title(index)));
+        let next = (self.selected + 1 < self.lessons.len())
+            .then(|| (self.selected + 1, self.numbered_title(self.selected + 1)));
+        let mut go_to = None;
         let lesson = &mut self.lessons[self.selected];
 
         egui::CentralPanel::default().show(ui, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.heading(lesson.title(tr));
-                ui.label(lesson.summary(tr));
-                ui.add_space(12.0);
+            // One scroll position per lesson: without it, the next lesson
+            // would open scrolled down to where the Next button was.
+            egui::ScrollArea::vertical()
+                .id_salt(lesson.id())
+                .show(ui, |ui| {
+                    ui.heading(lesson.title(tr));
+                    ui.label(lesson.summary(tr));
+                    ui.add_space(12.0);
 
-                // Live widget.
-                egui::Frame::group(ui.style()).show(ui, |ui| {
-                    ui.set_width(ui.available_width());
-                    lesson.demo(ui, tr);
-                });
+                    // Live widget.
+                    egui::Frame::group(ui.style()).show(ui, |ui| {
+                        ui.set_width(ui.available_width());
+                        lesson.demo(ui, tr);
+                    });
 
-                ui.add_space(12.0);
+                    ui.add_space(12.0);
 
-                // The code for exactly what is shown above.
-                ui.label(egui::RichText::new(tr.get("app-code")).strong());
-                let code = lesson.code(tr);
-                egui::Frame::group(ui.style()).show(ui, |ui| {
-                    ui.set_width(ui.available_width());
-                    let theme = CodeTheme::from_memory(ui.ctx(), ui.style());
-                    code_view_ui(ui, &theme, &code, "rs");
-                });
-                if ui.button(tr.get("app-copy")).clicked() {
-                    ui.ctx().copy_text(code);
-                }
+                    // The code for exactly what is shown above.
+                    ui.label(egui::RichText::new(tr.get("app-code")).strong());
+                    let code = lesson.code(tr);
+                    egui::Frame::group(ui.style()).show(ui, |ui| {
+                        ui.set_width(ui.available_width());
+                        let theme = CodeTheme::from_memory(ui.ctx(), ui.style());
+                        code_view_ui(ui, &theme, &code, "rs");
+                    });
+                    if ui.button(tr.get("app-copy")).clicked() {
+                        ui.ctx().copy_text(code);
+                    }
 
-                ui.add_space(16.0);
+                    ui.add_space(16.0);
 
-                for note in lesson.notes() {
-                    let id = format!("{}-{note}", lesson.id());
-                    ui.label(egui::RichText::new(tr.get(&id)).strong());
-                    ui.label(prose(ui, &tr.get(&format!("{id}.body"))));
-                    ui.add_space(10.0);
-                }
+                    for note in lesson.notes() {
+                        let id = format!("{}-{note}", lesson.id());
+                        ui.label(egui::RichText::new(tr.get(&id)).strong());
+                        ui.label(prose(ui, &tr.get(&format!("{id}.body"))));
+                        ui.add_space(10.0);
+                    }
 
-                let references = lesson.references();
-                if !references.is_empty() {
+                    let references = lesson.references();
+                    if !references.is_empty() {
+                        ui.separator();
+                        ui.horizontal_wrapped(|ui| {
+                            ui.label(tr.get("app-look-up"));
+                            for reference in references {
+                                // `Extend` so a name is never broken across lines:
+                                // `horizontal_wrapped` moves the whole chip to the
+                                // next row instead.
+                                ui.add(
+                                    egui::Label::new(
+                                        egui::RichText::new(*reference)
+                                            .monospace()
+                                            .background_color(ui.visuals().code_bg_color),
+                                    )
+                                    .wrap_mode(egui::TextWrapMode::Extend),
+                                );
+                            }
+                        });
+                    }
+
+                    ui.add_space(16.0);
                     ui.separator();
-                    ui.horizontal_wrapped(|ui| {
-                        ui.label(tr.get("app-look-up"));
-                        for reference in references {
-                            // `Extend` so a name is never broken across lines:
-                            // `horizontal_wrapped` moves the whole chip to the
-                            // next row instead.
-                            ui.add(
-                                egui::Label::new(
-                                    egui::RichText::new(*reference)
-                                        .monospace()
-                                        .background_color(ui.visuals().code_bg_color),
-                                )
-                                .wrap_mode(egui::TextWrapMode::Extend),
+                    ui.horizontal(|ui| {
+                        if let Some((index, title)) = previous {
+                            let text = tr.fmt("app-previous", &[("lesson", title.into())]);
+                            if ui.button(text).clicked() {
+                                go_to = Some(index);
+                            }
+                        }
+                        if let Some((index, title)) = next {
+                            ui.with_layout(
+                                egui::Layout::right_to_left(egui::Align::Center),
+                                |ui| {
+                                    let text = tr.fmt("app-next", &[("lesson", title.into())]);
+                                    if ui.button(text).clicked() {
+                                        go_to = Some(index);
+                                    }
+                                },
                             );
                         }
                     });
-                }
-            });
+                    ui.add_space(8.0);
+                });
         });
+
+        if let Some(index) = go_to {
+            self.selected = index;
+        }
     }
 }
 
@@ -403,7 +468,10 @@ impl DocsApp {
 impl Default for DocsApp {
     fn default() -> Self {
         let i18n = I18n::new();
-        let lessons = lessons::all(i18n.tr());
+        let mut lessons = lessons::all(i18n.tr());
+        // Reading order: by section, then as registered. The sort is stable,
+        // so the registry decides the order within a section.
+        lessons.sort_by_key(|lesson| lesson.section().index());
         Self {
             i18n,
             lessons,
@@ -413,9 +481,10 @@ impl Default for DocsApp {
 }
 
 impl eframe::App for DocsApp {
-    // NOTE: since egui 0.36 an app is handed a `&mut Ui`, not a `&Context`,
+    // NOTE: since egui 0.34 an app is handed a `&mut Ui`, not a `&Context`,
     // and panels are added to that `Ui`. Older tutorials still show
-    // `fn update(&mut self, ctx: &Context, ..)` — that signature is gone.
+    // `fn update(&mut self, ctx: &Context, ..)` — deprecated in 0.34 and
+    // removed in 0.35.
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.show(ui);
     }

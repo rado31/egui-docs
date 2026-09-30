@@ -139,7 +139,7 @@ impl Lesson for ButtonLesson {
     }
 
     fn section(&self) -> Section {
-        Section::Widgets
+        Section::Fundamentals
     }
 
     fn demo(&mut self, ui: &mut egui::Ui, tr: Tr<'_>) {

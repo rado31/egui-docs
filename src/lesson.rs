@@ -39,6 +39,15 @@ impl Section {
         Self::State,
     ];
 
+    /// Position in [`Self::ALL`], from 0. Lessons are sorted by it, so the
+    /// sidebar, the numbering and Previous / Next all agree on reading order.
+    pub fn index(self) -> usize {
+        Self::ALL
+            .iter()
+            .position(|section| *section == self)
+            .expect("every section is listed in Section::ALL")
+    }
+
     /// The id of this section's title in `locales/*/app.ftl`.
     pub fn title_id(self) -> &'static str {
         match self {

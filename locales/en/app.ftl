@@ -9,6 +9,10 @@ app-settings = Settings
 app-code = Code
 app-copy = Copy
 app-look-up = Look up:
+# At the bottom of every lesson. `$lesson` is the neighbour's number and title: `1.2 Response`.
+# The arrows are ⏴ ⏵ because egui's default fonts have no ← →.
+app-previous = ⏴ Previous: { $lesson }
+app-next = Next: { $lesson } ⏵
 app-theme-light = Switch to light mode
 app-theme-dark = Switch to dark mode
 app-zoom-in = Larger text  ({ $shortcut })

@@ -28,10 +28,9 @@ else in egui is built on. This project is an attempt at the missing middle.
 
 ## Status
 
-Early. Five lessons exist:
-
-- **Fundamentals** — `Response`, `Ui`, `Id`, `Atom`
-- **Widgets** — `Button`
+Early. Six lessons exist, all in **Fundamentals**, in reading order: `eframe::App`,
+`Button`, `Response`, `Id`, `Ui`, `Atom`. The sidebar numbers them, and each lesson ends
+with Previous / Next.
 
 Planned: layout, style & theme, text & fonts, input & interaction, painting,
 containers & windows, memory & state. The sidebar lists them greyed out, so the shape of

@@ -56,6 +56,11 @@ fn render_lesson(lesson: &'static str) {
 }
 
 #[test]
+fn lesson_eframe() {
+    render_lesson("eframe");
+}
+
+#[test]
 fn lesson_response() {
     render_lesson("response");
 }
