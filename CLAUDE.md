@@ -96,6 +96,8 @@ registered, snapshots are the whole check.
   panel widths and window geometry all reset on every launch. This was removed on purpose —
   do not reintroduce it.
 - `dist/` stays out of git. GitHub Pages build: `trunk build --release --public-url /egui-docs/`.
+- **Deploys are manual.** Pushing to `main` does not publish the site; the Pages workflow
+  runs only on `workflow_dispatch` (`gh workflow run pages.yml`).
 
 ## Knowledge graph
 
