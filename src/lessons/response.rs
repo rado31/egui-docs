@@ -6,7 +6,8 @@
 use egui::{Sense, Vec2};
 
 use crate::code::{CodeBuilder, indent};
-use crate::lesson::{Lesson, Note, Section};
+use crate::i18n::Tr;
+use crate::lesson::{Lesson, Section};
 use crate::ui::{Pulse, event_flag, state_flag};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -67,20 +68,16 @@ impl Default for ResponseLesson {
 }
 
 impl Lesson for ResponseLesson {
-    fn title(&self) -> &'static str {
-        "Response"
+    fn id(&self) -> &'static str {
+        "response"
     }
 
     fn section(&self) -> Section {
         Section::Fundamentals
     }
 
-    fn summary(&self) -> &'static str {
-        "What every widget hands back — and the difference between a state and an event."
-    }
-
-    fn demo(&mut self, ui: &mut egui::Ui) {
-        let target = egui::Button::new("Poke me")
+    fn demo(&mut self, ui: &mut egui::Ui, tr: Tr<'_>) {
+        let target = egui::Button::new(tr.get("response-target"))
             .min_size(Vec2::new(220.0, 64.0))
             .sense(self.sense.sense());
         let response = ui.add_enabled(self.enabled, target);
@@ -89,7 +86,7 @@ impl Lesson for ResponseLesson {
 
         // States: true for as long as the condition holds. `state_flag` takes
         // no Pulse — a state stays lit by itself.
-        ui.label(egui::RichText::new("states").strong());
+        ui.label(egui::RichText::new(tr.get("response-states")).strong());
         ui.horizontal_wrapped(|ui| {
             state_flag(ui, "hovered", response.hovered());
             state_flag(ui, "contains_pointer", response.contains_pointer());
@@ -106,7 +103,7 @@ impl Lesson for ResponseLesson {
 
         // Events: true for exactly one frame. `event_flag` *requires* a Pulse,
         // so the fade that makes a one-frame flag visible cannot be forgotten.
-        ui.label(egui::RichText::new("events — true for one frame only").strong());
+        ui.label(egui::RichText::new(tr.get("response-events")).strong());
         ui.horizontal_wrapped(|ui| {
             let p = &mut self.pulses;
             event_flag(ui, "clicked", response.clicked(), &mut p.clicked);
@@ -157,18 +154,21 @@ impl Lesson for ResponseLesson {
 
         if self.show_geometry {
             ui.add_space(8.0);
-            ui.label(egui::RichText::new("values").strong());
+            ui.label(egui::RichText::new(tr.get("response-values")).strong());
             egui::Grid::new("response_values")
                 .num_columns(2)
                 .striped(true)
                 .show(ui, |ui| {
                     ui.label("rect");
-                    ui.label(format!(
-                        "{:.0} x {:.0}  at ({:.0}, {:.0})",
-                        response.rect.width(),
-                        response.rect.height(),
-                        response.rect.min.x,
-                        response.rect.min.y
+                    let rect = response.rect;
+                    ui.label(tr.fmt(
+                        "response-rect",
+                        &[
+                            ("width", format!("{:.0}", rect.width()).into()),
+                            ("height", format!("{:.0}", rect.height()).into()),
+                            ("x", format!("{:.0}", rect.min.x).into()),
+                            ("y", format!("{:.0}", rect.min.y).into()),
+                        ],
                     ));
                     ui.end_row();
 
@@ -191,27 +191,25 @@ impl Lesson for ResponseLesson {
         }
     }
 
-    fn controls(&mut self, ui: &mut egui::Ui) {
-        ui.label("What the widget senses");
+    fn controls(&mut self, ui: &mut egui::Ui, tr: Tr<'_>) {
+        ui.label(tr.get("response-senses"));
         ui.selectable_value(&mut self.sense, SenseKind::Click, "click");
         ui.selectable_value(&mut self.sense, SenseKind::Drag, "drag");
         ui.selectable_value(&mut self.sense, SenseKind::ClickAndDrag, "click_and_drag");
         ui.add_space(8.0);
 
         ui.checkbox(&mut self.enabled, "enabled");
-        ui.checkbox(&mut self.show_geometry, "show values");
+        ui.checkbox(&mut self.show_geometry, tr.get("response-show-values"));
 
         ui.add_space(12.0);
-        ui.label(
-            egui::RichText::new(
-                "Try: right-click, double-click, press and drag, then Tab to focus it.",
-            )
-            .italics(),
-        );
+        ui.label(egui::RichText::new(tr.get("response-try")).italics());
     }
 
-    fn code(&self) -> String {
-        let mut widget = CodeBuilder::new(r#"egui::Button::new("Poke me")"#);
+    fn code(&self, tr: Tr<'_>) -> String {
+        let mut widget = CodeBuilder::new(format!(
+            "egui::Button::new({:?})",
+            tr.get("response-target")
+        ));
         widget
             .call(".min_size(egui::vec2(220.0, 64.0))")
             .call(format!(".sense({})", self.sense.code()));
@@ -225,52 +223,24 @@ impl Lesson for ResponseLesson {
 
         format!(
             "{add}\n\n\
-             // States — true while the condition holds:\n\
+             // {states}\n\
              response.hovered();\n\
              response.dragged();\n\n\
-             // Events — true for exactly one frame:\n\
+             // {events}\n\
              if response.clicked() {{ /* ... */ }}\n\
              if response.drag_started() {{ /* ... */ }}\n\n\
-             // Values:\n\
+             // {values}\n\
              response.rect;\n\
              response.drag_delta();\n\
-             response.interact_pointer_pos();"
+             response.interact_pointer_pos();",
+            states = tr.get("response-code-states"),
+            events = tr.get("response-code-events"),
+            values = tr.get("response-code-values"),
         )
     }
 
-    fn notes(&self) -> &'static [Note] {
-        &[
-            Note {
-                heading: "States vs events",
-                body: "`hovered()` is a state: it stays true the whole time the pointer is over \
-                       the widget. `clicked()` is an event: it is true for exactly one frame, \
-                       then false again. At 60 fps that is 16 ms — which is why the chips above \
-                       fade out instead of blinking. If you need to remember an event, you must \
-                       store it yourself (a counter, a bool in your app struct); the Response is \
-                       gone at the end of the frame.",
-            },
-            Note {
-                heading: "Sense decides what is even possible",
-                body: "A widget only reports what it senses. Switch the knob to `drag` and \
-                       `clicked()` stops firing no matter how you click — the widget is not \
-                       listening for clicks. `Sense` is also what makes a widget eligible for \
-                       hover highlighting and focus at all.",
-            },
-            Note {
-                heading: "Disabled widgets still return a Response",
-                body: "`add_enabled(false, ..)` does not remove the widget: you still get a \
-                       Response back, its `rect` is still valid, but no interaction flag will \
-                       ever be true. That is why you can write `if response.clicked()` \
-                       unconditionally without checking whether the widget is enabled.",
-            },
-            Note {
-                heading: "The Response is the whole API surface",
-                body: "There is no widget object to query later, and no event handler to \
-                       register. Everything egui will ever tell you about a widget is in the \
-                       struct returned by the call — including `rect` for layout, `id` for \
-                       memory, and helpers like `on_hover_text(..)` that consume and return it.",
-            },
-        ]
+    fn notes(&self) -> &'static [&'static str] {
+        &["states-vs-events", "sense", "disabled", "whole-api"]
     }
 
     fn references(&self) -> &'static [&'static str] {

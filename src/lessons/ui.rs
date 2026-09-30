@@ -8,7 +8,8 @@
 //! and where the next widget would land — painted right over a live one.
 
 use crate::code::{f32_code, indent};
-use crate::lesson::{Lesson, Note, Section};
+use crate::i18n::Tr;
+use crate::lesson::{Lesson, Section};
 
 /// Overlay colours. Fixed rather than taken from the theme: these are
 /// annotations on top of the demo, not part of it, and they have to stay
@@ -151,26 +152,24 @@ fn outline(ui: &egui::Ui, rect: egui::Rect, color: egui::Color32, dashed: bool) 
 }
 
 impl Lesson for UiLesson {
-    fn title(&self) -> &'static str {
-        "Ui"
+    fn id(&self) -> &'static str {
+        "ui"
     }
 
     fn section(&self) -> Section {
         Section::Fundamentals
     }
 
-    fn summary(&self) -> &'static str {
-        "A region and a cursor inside it — every widget you add moves that cursor."
-    }
-
-    fn demo(&mut self, ui: &mut egui::Ui) {
+    fn demo(&mut self, ui: &mut egui::Ui, tr: Tr<'_>) {
         let region = ui.allocate_ui_with_layout(
             egui::vec2(self.width, self.height),
             self.layout.layout(),
             |ui| {
                 let mut rows: Vec<egui::Rect> = Vec::new();
                 for index in 1..=self.widgets {
-                    let response = ui.add(egui::Button::new(format!("Widget #{index}")));
+                    let response = ui.add(egui::Button::new(
+                        tr.fmt("ui-widget", &[("index", index.into())]),
+                    ));
 
                     // In a horizontal layout the cursor's vertical extent *is* the
                     // current row. `response.rect` would not do: it is the button
@@ -244,10 +243,7 @@ impl Lesson for UiLesson {
 
         ui.add_space(10.0);
 
-        ui.label(
-            egui::RichText::new("Measurements — each name is printed in the colour of its outline")
-                .strong(),
-        );
+        ui.label(egui::RichText::new(tr.get("ui-measurements")).strong());
         ui.add_space(4.0);
 
         let origin = measured.max.min;
@@ -292,10 +288,12 @@ impl Lesson for UiLesson {
                 row(
                     CURSOR_COLOR,
                     "next_widget_position()",
-                    format!(
-                        "+{:.0}, +{:.0}  from max_rect.min",
-                        measured.next.x - origin.x,
-                        measured.next.y - origin.y
+                    tr.fmt(
+                        "ui-next-offset",
+                        &[
+                            ("x", format!("{:.0}", measured.next.x - origin.x).into()),
+                            ("y", format!("{:.0}", measured.next.y - origin.y).into()),
+                        ],
                     ),
                 );
 
@@ -313,96 +311,84 @@ impl Lesson for UiLesson {
                         - measured.rows.first().map_or(0.0, |r| r.top());
                     row(
                         ROW_COLOR,
-                        "cursor() row heights",
+                        &tr.get("ui-row-heights"),
                         format!("{} = {total:.0}", heights.join(&spacing)),
                     );
                 }
             });
     }
 
-    fn controls(&mut self, ui: &mut egui::Ui) {
-        ui.label("Region offered to the Ui");
+    fn controls(&mut self, ui: &mut egui::Ui, tr: Tr<'_>) {
+        ui.label(tr.get("ui-region"));
         ui.add(
             egui::Slider::new(&mut self.width, 120.0..=520.0)
                 .step_by(10.0)
-                .text("width"),
+                .text(tr.get("ui-width")),
         );
         ui.add(
             egui::Slider::new(&mut self.height, 60.0..=260.0)
                 .step_by(10.0)
-                .text("height"),
+                .text(tr.get("ui-height")),
         );
-        ui.add(egui::Slider::new(&mut self.widgets, 1..=8).text("widgets"));
+        ui.add(egui::Slider::new(&mut self.widgets, 1..=8).text(tr.get("ui-widgets")));
 
         ui.add_space(10.0);
-        ui.label("Layout");
+        ui.label(tr.get("ui-layout"));
         for kind in LayoutKind::ALL {
             ui.selectable_value(&mut self.layout, *kind, kind.label());
         }
 
         ui.add_space(10.0);
-        ui.label("Draw");
+        ui.label(tr.get("ui-draw"));
         ui.checkbox(&mut self.show_max, "max_rect");
         ui.checkbox(&mut self.show_min, "min_rect");
         ui.checkbox(&mut self.show_available, "available");
-        ui.checkbox(&mut self.show_cursor, "next position");
+        ui.checkbox(&mut self.show_cursor, tr.get("ui-next-position"));
         ui.add_enabled(
             self.layout.is_horizontal(),
-            egui::Checkbox::new(&mut self.show_rows, "rows"),
+            egui::Checkbox::new(&mut self.show_rows, tr.get("ui-rows")),
         )
-        .on_disabled_hover_text("Only a horizontal layout has rows.");
+        .on_disabled_hover_text(tr.get("ui-rows-disabled"));
 
         ui.add_space(12.0);
-        ui.label(
-            egui::RichText::new(
-                "Try: pull the height down to 60 with 5 widgets. Nothing is cut off — \
-                 max_rect reports back more than you asked for.",
-            )
-            .italics(),
-        );
+        ui.label(egui::RichText::new(tr.get("ui-try")).italics());
     }
 
-    fn code(&self) -> String {
-        let next_comment = format!("where widget #{} would start", self.widgets + 1);
+    fn code(&self, tr: Tr<'_>) -> String {
         let mut body = String::new();
         for index in 1..=self.widgets {
-            body.push_str(&format!(
-                "ui.add(egui::Button::new(\"Widget #{index}\"));\n"
-            ));
+            let label = tr.fmt("ui-widget", &[("index", index.into())]);
+            body.push_str(&format!("ui.add(egui::Button::new({label:?}));\n"));
         }
 
-        let reads: &[(bool, &str, &str)] = &[
-            (
-                self.show_max,
-                "ui.max_rect();",
-                "the region widgets try to fit in",
-            ),
-            (self.show_min, "ui.min_rect();", "everything added so far"),
+        let reads: &[(bool, &str, String)] = &[
+            (self.show_max, "ui.max_rect();", tr.get("ui-code-max")),
+            (self.show_min, "ui.min_rect();", tr.get("ui-code-min")),
             (
                 self.show_available,
                 "ui.available_rect_before_wrap();",
-                "what is left on this row",
+                tr.get("ui-code-before-wrap"),
             ),
             (
                 self.show_available,
                 "ui.available_size();",
-                "what is left after a wrap",
+                tr.get("ui-code-available"),
             ),
             (
                 self.show_cursor,
                 "ui.next_widget_position();",
-                next_comment.as_str(),
+                tr.fmt("ui-code-next", &[("index", (self.widgets + 1).into())]),
             ),
             (
                 self.show_rows && self.layout.is_horizontal(),
                 "ui.cursor().y_range();",
-                "after each widget: the row it went into",
+                tr.get("ui-code-rows"),
             ),
         ];
 
-        let drawn: Vec<&(bool, &str, &str)> = reads.iter().filter(|(on, ..)| *on).collect();
+        let drawn: Vec<&(bool, &str, String)> = reads.iter().filter(|(on, ..)| *on).collect();
         if !drawn.is_empty() {
-            body.push_str("\n// Read after the last widget — the state the next one sees:\n");
+            body.push_str(&format!("\n// {}\n", tr.get("ui-code-read-after")));
             for (_, call, comment) in drawn {
                 body.push_str(&format!("{call:<33}// {comment}\n"));
             }
@@ -420,71 +406,14 @@ impl Lesson for UiLesson {
         )
     }
 
-    fn notes(&self) -> &'static [Note] {
+    fn notes(&self) -> &'static [&'static str] {
         &[
-            Note {
-                heading: "A Ui is a rectangle plus a cursor",
-                body: "There is no `Ui` object drawn on screen — it is bookkeeping. `max_rect` is \
-                       the region it was handed, `min_rect` is the part it has filled so far, and \
-                       the cursor sits at the edge between them. Every widget call does the same \
-                       three things: ask the placer for space at the cursor inside `max_rect`, \
-                       paint into it, then advance the cursor and grow `min_rect` to include what \
-                       was just added.",
-            },
-            Note {
-                heading: "max_rect is a request, not a limit",
-                body: "Pull the height down until the buttons no longer fit, and watch the table: \
-                       `max_rect()` reports back more than the height that was asked for. When \
-                       something does not fit, egui expands *both* rectangles and makes the \
-                       parent find the room — it would rather overflow than cut a widget off. So \
-                       `max_rect` is what widgets *aim* for, never a clip rectangle. Text is the \
-                       one thing that truly respects it: a `Label` wraps to `max_rect`'s width, \
-                       which is why a narrow region turns a label into a tall column of words.",
-            },
-            Note {
-                heading: "min_rect only ever grows",
-                body: "It is the union of every widget added to this `Ui`, so it never shrinks \
-                       back — not even if the widget that caused it to grow disappears on the \
-                       next frame. That is also what a container returns: `ui.horizontal(..)` \
-                       gives you an `InnerResponse` whose `rect` is the child's final `min_rect`, \
-                       which is how the parent knows how much space the group actually took.",
-            },
-            Note {
-                heading: "available_size() vs available_rect_before_wrap()",
-                body: "In a non-wrapping layout these two agree, and most code can use either. \
-                       Switch the layout knob to `left_to_right + wrap` and watch them part ways: \
-                       `available_rect_before_wrap()` is what is left *on the current row*, while \
-                       `available_size()` reports the full row width — what a widget could get \
-                       *after* wrapping onto a fresh row. Ask for the first when deciding whether \
-                       something still fits beside the last widget.",
-            },
-            Note {
-                heading: "Align is the cross axis, not the main one",
-                body: "`Layout::left_to_right(egui::Align::Center)` moves left to right, and the \
-                       `Align` decides where each widget sits *across* that direction — \
-                       vertically. Hand a horizontal layout a tall region and the buttons float in \
-                       the middle of it, which is exactly what the `left_to_right + wrap` knob \
-                       shows: every wrapped row is as tall as the region, and the widgets are \
-                       centred in it. `ui.horizontal(..)` uses this same layout, and looks normal \
-                       only because it is handed a region one row high.\n\n\
-                       It also explains the numbers. With the default height and two wrapped rows, \
-                       `min_rect()` is 323 high: 160 + 3 + 160 — two rows as tall as the region, \
-                       plus `item_spacing.y` between them. The button is only ~18 px, but egui \
-                       counts its whole *frame* as used, and with `Align::Center` the frame is the \
-                       full row. Note which scale each number is on: `max_rect()` and \
-                       `min_rect()` measure the whole region, while `available_size()` and \
-                       `available_rect_before_wrap()` measure only the current row — which is why \
-                       they still say 160.",
-            },
-            Note {
-                heading: "Every container hands you a new Ui",
-                body: "`ui.horizontal(..)`, `ui.group(..)`, `ui.allocate_ui_with_layout(..)` and \
-                       every panel build a *child* `Ui` with its own `max_rect`, its own cursor, \
-                       its own `Layout` and its own `Id`. The `ui` inside the closure is not the \
-                       `ui` outside it. That is why an Id derived inside a container differs from \
-                       one derived outside — see the `Id` lesson — and why setting a width inside \
-                       a closure does not affect the parent.",
-            },
+            "rect-and-cursor",
+            "request-not-limit",
+            "min-grows",
+            "available",
+            "align",
+            "child-ui",
         ]
     }
 

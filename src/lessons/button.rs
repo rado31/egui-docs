@@ -7,7 +7,8 @@
 use egui::{Color32, Sense, Stroke, Vec2};
 
 use crate::code::{CodeBuilder, color_code, f32_code, indent};
-use crate::lesson::{Lesson, Note, Section};
+use crate::i18n::Tr;
+use crate::lesson::{Lesson, Section, retranslate_text};
 use crate::ui::{Pulse, event_flag, state_flag};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -66,10 +67,12 @@ pub struct ButtonLesson {
     click_pulse: Pulse,
 }
 
-impl Default for ButtonLesson {
-    fn default() -> Self {
+impl ButtonLesson {
+    /// Takes the language for the one piece of state that is text: the label,
+    /// which the reader can edit.
+    pub fn new(tr: Tr<'_>) -> Self {
         Self {
-            label: "Click me".to_owned(),
+            label: tr.get("button-label"),
             enabled: true,
             frame: true,
             small: false,
@@ -131,19 +134,15 @@ impl ButtonLesson {
 }
 
 impl Lesson for ButtonLesson {
-    fn title(&self) -> &'static str {
-        "Button"
+    fn id(&self) -> &'static str {
+        "button"
     }
 
     fn section(&self) -> Section {
         Section::Widgets
     }
 
-    fn summary(&self) -> &'static str {
-        "A clickable widget — and the shortest path to understanding Response."
-    }
-
-    fn demo(&mut self, ui: &mut egui::Ui) {
+    fn demo(&mut self, ui: &mut egui::Ui, tr: Tr<'_>) {
         let response = ui.add_enabled(self.enabled, self.button());
 
         if response.clicked() {
@@ -158,16 +157,16 @@ impl Lesson for ButtonLesson {
             state_flag(ui, "hovered()", response.hovered());
 
             ui.separator();
-            ui.label("clicks:");
+            ui.label(tr.get("button-clicks"));
             ui.strong(self.clicks.to_string());
-            if ui.button("reset").clicked() {
+            if ui.button(tr.get("button-reset")).clicked() {
                 self.clicks = 0;
             }
         });
     }
 
-    fn controls(&mut self, ui: &mut egui::Ui) {
-        ui.label("Text");
+    fn controls(&mut self, ui: &mut egui::Ui, tr: Tr<'_>) {
+        ui.label(tr.get("button-text"));
         ui.text_edit_singleline(&mut self.label);
         ui.add_space(8.0);
 
@@ -235,11 +234,15 @@ impl Lesson for ButtonLesson {
         ui.horizontal_wrapped(|ui| {
             ui.selectable_value(&mut self.sense, SenseKind::Click, "click");
             ui.selectable_value(&mut self.sense, SenseKind::Drag, "drag");
-            ui.selectable_value(&mut self.sense, SenseKind::ClickAndDrag, "both");
+            ui.selectable_value(
+                &mut self.sense,
+                SenseKind::ClickAndDrag,
+                tr.get("button-sense-both"),
+            );
         });
     }
 
-    fn code(&self) -> String {
+    fn code(&self, _tr: Tr<'_>) -> String {
         let mut widget = CodeBuilder::new(format!("egui::Button::new({:?})", self.label));
         widget
             .call_if(self.small, ".small()")
@@ -286,39 +289,17 @@ impl Lesson for ButtonLesson {
         format!("{add}\n\nif response.clicked() {{\n    self.clicks += 1;\n}}")
     }
 
-    fn notes(&self) -> &'static [Note] {
+    fn notes(&self) -> &'static [&'static str] {
         &[
-            Note {
-                heading: "There is no click callback",
-                body: "In a retained GUI you register a handler and wait to be called back. \
-                       egui has no handler: you call the widget every frame, and it returns a \
-                       Response describing what happened to it *this* frame. `clicked()` is \
-                       just a bool on that struct. This is the single idea the whole library \
-                       is built on — every widget works this way.",
-            },
-            Note {
-                heading: "The widget is a value, not an object",
-                body: "`egui::Button::new(..)` builds a plain struct that lives for one frame. \
-                       Each `.fill(..)`-style method takes it by value and returns it back, so \
-                       they chain. Nothing is stored between frames: turn a knob and the next \
-                       frame simply builds a different Button. That is why the code on the left \
-                       can be regenerated from state — there is no hidden widget object to sync.",
-            },
-            Note {
-                heading: "add vs add_enabled",
-                body: "`ui.add(widget)` shows it normally. `ui.add_enabled(false, widget)` greys \
-                       it out and makes it non-interactive — the Response still comes back, but \
-                       `clicked()` will never be true. Use `ui.add_enabled_ui(..)` when you want \
-                       to disable a whole group at once.",
-            },
-            Note {
-                heading: "Button::new takes Atoms, not just text",
-                body: "The signature is `new(impl IntoAtoms)`. An Atom is a piece of button \
-                       content — text, an image, a gap — and a string is just the simplest one. \
-                       That is what makes `.shortcut_text(..)` and image buttons possible. \
-                       Atoms get their own lesson; a plain &str is enough for now.",
-            },
+            "no-callback",
+            "value-not-object",
+            "add-vs-add-enabled",
+            "atoms",
         ]
+    }
+
+    fn retranslate(&mut self, old: Tr<'_>, new: Tr<'_>) {
+        retranslate_text(&mut self.label, "button-label", old, new);
     }
 
     fn references(&self) -> &'static [&'static str] {

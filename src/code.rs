@@ -65,6 +65,12 @@ pub fn indent(text: &str, levels: usize) -> String {
         .join("\n")
 }
 
+/// Turn a (translated, possibly multi-line) message into `//` comment lines,
+/// each ending in a newline. How long a line is stays the translator's call.
+pub fn line_comments(text: &str) -> String {
+    text.lines().map(|line| format!("// {line}\n")).collect()
+}
+
 /// `Color32` as the literal you would type yourself.
 pub fn color_code(color: egui::Color32) -> String {
     let [r, g, b, a] = color.to_array();

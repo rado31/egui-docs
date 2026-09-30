@@ -5,6 +5,7 @@
 
 pub mod app;
 pub mod code;
+pub mod i18n;
 pub mod lesson;
 pub mod lessons;
 pub mod ui;

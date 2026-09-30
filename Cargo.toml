@@ -24,11 +24,22 @@ eframe = { version = "=0.36.2", default-features = false, features = [
 ] }
 egui_extras = "=0.36.2"
 
+# Translations: one folder of Fluent files per language under `locales/`,
+# embedded at compile time by `build.rs`. Fluent rather than format strings
+# because Russian (like most languages) has more than two plural forms.
+fluent-bundle = "0.16"
+fluent-syntax = "0.12" # only to list a language's message ids, for the tests
+unic-langid = "0.9"
+# Picks the starting language from the OS, or from `navigator.language` on the
+# web. `js` is what enables the web half; it is target-gated inside the crate.
+sys-locale = { version = "0.3", features = ["js"] }
+# Reports broken translation files. Already in the tree through egui.
+log = "0.4"
+
 # Web build only. eframe re-exports `wasm_bindgen` and `web_sys`, so only the
-# async executor and the logger backend are needed here.
+# async executor is needed here.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"
-log = "0.4"
 
 # Native build only: somewhere for egui's and eframe's `log` output to go. On
 # the web `eframe::WebLogger` already routes it to the browser console.

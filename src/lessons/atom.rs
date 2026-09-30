@@ -6,8 +6,9 @@
 
 use egui::AtomExt as _;
 
-use crate::code::{CodeBuilder, color_code, f32_code, indent};
-use crate::lesson::{Lesson, Note, Section};
+use crate::code::{CodeBuilder, color_code, f32_code, indent, line_comments};
+use crate::i18n::Tr;
+use crate::lesson::{Lesson, Section, retranslate_text};
 
 /// Overlay colours, one per atom. Fixed rather than themed for the same reason
 /// as in the Ui lesson: annotations have to stay distinct in both themes.
@@ -58,6 +59,8 @@ enum Part {
 }
 
 impl Part {
+    /// Stable, for the overlay's ids. The name shown to the reader is the
+    /// message `atom-part-<name>`.
     fn name(self) -> &'static str {
         match self {
             Self::Icon => "icon",
@@ -66,6 +69,10 @@ impl Part {
             Self::Shortcut => "shortcut",
             Self::Dot => "custom",
         }
+    }
+
+    fn display_name(self, tr: Tr<'_>) -> String {
+        tr.get(&format!("atom-part-{}", self.name()))
     }
 
     fn color(self) -> egui::Color32 {
@@ -104,13 +111,14 @@ pub struct AtomLesson {
     show_outlines: bool,
 }
 
-impl Default for AtomLesson {
-    fn default() -> Self {
+impl AtomLesson {
+    /// Takes the language for the label, which the reader can edit.
+    pub fn new(tr: Tr<'_>) -> Self {
         Self {
             width: 340.0,
             wrap: WrapKind::Default,
             icon: true,
-            label: "Quarterly report – final.pdf".to_owned(),
+            label: tr.get("atom-label"),
             label_shrink: true,
             use_label_max_width: false,
             label_max_width: 120.0,
@@ -250,20 +258,20 @@ impl AtomLesson {
     }
 }
 
+fn px_wide(tr: Tr<'_>, width: f32) -> String {
+    tr.fmt("atom-px-wide", &[("width", format!("{width:.0}").into())])
+}
+
 impl Lesson for AtomLesson {
-    fn title(&self) -> &'static str {
-        "Atom"
+    fn id(&self) -> &'static str {
+        "atom"
     }
 
     fn section(&self) -> Section {
         Section::Fundamentals
     }
 
-    fn summary(&self) -> &'static str {
-        "What a Button is made of: a row of atoms that grow, shrink, or leave room for you."
-    }
-
-    fn demo(&mut self, ui: &mut egui::Ui) {
+    fn demo(&mut self, ui: &mut egui::Ui, tr: Tr<'_>) {
         let origin = ui.next_widget_position();
 
         let response = ui
@@ -311,10 +319,7 @@ impl Lesson for AtomLesson {
 
         ui.add_space(14.0);
 
-        ui.label(
-            egui::RichText::new("Atoms, left to right — each name in the colour of its outline")
-                .strong(),
-        );
+        ui.label(egui::RichText::new(tr.get("atom-measurements")).strong());
         ui.add_space(4.0);
 
         egui::Grid::new("atom_measurements")
@@ -327,37 +332,53 @@ impl Lesson for AtomLesson {
                     } else {
                         ui.visuals().text_color()
                     };
-                    ui.label(egui::RichText::new(part.name()).monospace().color(color));
+                    ui.label(
+                        egui::RichText::new(part.display_name(tr))
+                            .monospace()
+                            .color(color),
+                    );
                     ui.label(
                         egui::RichText::new(self.atom_code(*part))
                             .monospace()
                             .weak(),
                     );
                     ui.label(match rect {
-                        Some(rect) => format!("{:.0} px wide", rect.width()),
-                        None => "— nothing after it to push".to_owned(),
+                        Some(rect) => px_wide(tr, rect.width()),
+                        None => tr.get("atom-nothing-after"),
                     });
                     ui.end_row();
                 }
 
                 let rect = response.response.rect;
-                ui.label(egui::RichText::new("button").monospace().color(LIMIT_COLOR));
                 ui.label(
-                    egui::RichText::new(format!("offered {:.0} px", self.width))
+                    egui::RichText::new(tr.get("atom-part-button"))
                         .monospace()
-                        .weak(),
+                        .color(LIMIT_COLOR),
+                );
+                ui.label(
+                    egui::RichText::new(tr.fmt(
+                        "atom-offered",
+                        &[("width", format!("{:.0}", self.width).into())],
+                    ))
+                    .monospace()
+                    .weak(),
                 );
                 let wanted = response
                     .response
                     .intrinsic_size()
-                    .map_or(String::new(), |size| format!(", would like {:.0}", size.x));
-                ui.label(format!("{:.0} px wide{wanted}", rect.width()));
+                    .map_or(String::new(), |size| {
+                        tr.fmt(
+                            "atom-would-like",
+                            &[("width", format!("{:.0}", size.x).into())],
+                        )
+                    });
+                ui.label(format!("{}{wanted}", px_wide(tr, rect.width())));
                 ui.end_row();
             });
     }
 
-    fn controls(&mut self, ui: &mut egui::Ui) {
-        ui.label("Width offered to the button");
+    fn controls(&mut self, ui: &mut egui::Ui, tr: Tr<'_>) {
+        ui.label(tr.get("atom-width-offered"));
         ui.add(
             egui::Slider::new(&mut self.width, 80.0..=480.0)
                 .step_by(10.0)
@@ -365,8 +386,8 @@ impl Lesson for AtomLesson {
         );
         ui.add_space(8.0);
 
-        ui.label("Atoms");
-        ui.checkbox(&mut self.icon, "icon");
+        ui.label(tr.get("atom-atoms"));
+        ui.checkbox(&mut self.icon, Part::Icon.display_name(tr));
         ui.text_edit_singleline(&mut self.label);
         ui.indent("label_atom", |ui| {
             ui.checkbox(&mut self.label_shrink, "atom_shrink(true)");
@@ -381,33 +402,30 @@ impl Lesson for AtomLesson {
             });
         });
         ui.checkbox(&mut self.grow, "Atom::grow()");
-        ui.checkbox(&mut self.shortcut, "shortcut");
+        ui.checkbox(&mut self.shortcut, Part::Shortcut.display_name(tr));
         ui.checkbox(&mut self.dot, "Atom::custom(..)");
         ui.add_space(8.0);
 
-        ui.label("Wrap mode");
+        ui.label(tr.get("atom-wrap-mode"));
         ui.horizontal_wrapped(|ui| {
-            ui.selectable_value(&mut self.wrap, WrapKind::Default, "Ui's");
+            ui.selectable_value(
+                &mut self.wrap,
+                WrapKind::Default,
+                tr.get("atom-wrap-default"),
+            );
             ui.selectable_value(&mut self.wrap, WrapKind::Truncate, "truncate");
             ui.selectable_value(&mut self.wrap, WrapKind::Wrap, "wrap");
             ui.selectable_value(&mut self.wrap, WrapKind::Extend, "extend");
         });
         ui.add_space(8.0);
 
-        ui.checkbox(&mut self.show_outlines, "outline atoms");
+        ui.checkbox(&mut self.show_outlines, tr.get("atom-outlines"));
 
         ui.add_space(12.0);
-        ui.label(
-            egui::RichText::new(
-                "Narrow the width to 200 px, then turn off atom_shrink on the \
-                 label: egui picks the first text atom to shrink instead — the \
-                 icon, which cannot.",
-            )
-            .italics(),
-        );
+        ui.label(egui::RichText::new(tr.get("atom-try")).italics());
     }
 
-    fn code(&self) -> String {
+    fn code(&self, tr: Tr<'_>) -> String {
         let parts = self.parts();
         let atoms: Vec<String> = parts.iter().map(|&part| self.atom_code(part)).collect();
 
@@ -441,7 +459,7 @@ impl Lesson for AtomLesson {
         let body = if self.dot {
             format!(
                 "ui.set_max_width({width});\n\n\
-                 // `atom_ui` instead of `ui.add`: it hands back each custom atom's rect.\n\
+                 // {atom_ui}\n\
                  let response = {button};\n\n\
                  if let Some(rect) = response.rect(dot) {{\n    \
                      ui.painter().circle_filled(rect.center(), {radius}, {color});\n\
@@ -449,6 +467,7 @@ impl Lesson for AtomLesson {
                 width = f32_code(self.width),
                 radius = f32_code(DOT_SIZE / 2.0),
                 color = color_code(STATUS_COLOR),
+                atom_ui = tr.get("atom-code-atom-ui"),
             )
         } else {
             format!(
@@ -460,15 +479,17 @@ impl Lesson for AtomLesson {
 
         let mut out = String::new();
         if self.label_has_ext() {
-            out.push_str("use egui::AtomExt as _; // the .atom_*() methods\n\n");
+            out.push_str(&format!(
+                "use egui::AtomExt as _; // {}\n\n",
+                tr.get("atom-code-ext")
+            ));
         }
         if self.dot {
             out.push_str("let dot = egui::Id::new(\"status_dot\");\n\n");
         }
+        out.push_str(&line_comments(&tr.get("atom-code-justified")));
         out.push_str(&format!(
-            "// Justified, so the button fills the width — which gives grow\n\
-             // something to fill and shrink something to fit into.\n\
-             ui.with_layout(egui::Layout::top_down_justified(egui::Align::Min), |ui| {{\n\
+            "ui.with_layout(egui::Layout::top_down_justified(egui::Align::Min), |ui| {{\n\
              {}\n\
              }});",
             indent(&body, 1)
@@ -476,64 +497,19 @@ impl Lesson for AtomLesson {
         out
     }
 
-    fn notes(&self) -> &'static [Note] {
+    fn notes(&self) -> &'static [&'static str] {
         &[
-            Note {
-                heading: "Everything inside a Button is an Atom",
-                body: "`Button::new` takes `impl IntoAtoms`. A `&str`, a `RichText`, an `Image` \
-                       or an `Atom` is one atom; a tuple of up to six of them is a row. Button, \
-                       Checkbox, RadioButton and menu buttons are all built on the same \
-                       `AtomLayout`, so what you learn here applies to all of them. Even \
-                       `.shortcut_text(..)` is nothing special: it is `push_right(Atom::grow())` \
-                       followed by the text, made weak.",
-            },
-            Note {
-                heading: "grow takes the slack — if there is any",
-                body: "Space left over after every atom is sized is split equally between the \
-                       atoms marked `grow`. But a Button is normally only as wide as its \
-                       content, so there is no slack and `grow` does nothing. It needs a width \
-                       from outside: a justified layout, as here, or `.min_size(..)` on the \
-                       button. Without one, `Atom::grow()` is a silent no-op.",
-            },
-            Note {
-                heading: "Exactly one atom shrinks — egui picks one if you do not",
-                body: "When the atoms do not fit, one atom gives up space: the one marked \
-                       `atom_shrink(true)`. It is sized last, with whatever width the others \
-                       left. Mark none and egui marks the *first text atom* for you. In this \
-                       button that is the icon — a single glyph, which cannot get any narrower. \
-                       So nothing gives, and the button runs past the dashed line as if it could \
-                       not shrink at all. Marking two is a bug: a debug assertion, and in release \
-                       only the first counts.",
-            },
-            Note {
-                heading: "The wrap mode decides what shrinking means",
-                body: "`.truncate()` cuts the shrinking atom with an ellipsis, `.wrap()` breaks \
-                       it onto more lines and makes the button taller, and `Extend` never \
-                       shrinks at all — the button runs past the dashed line. With no call the \
-                       `Ui` decides: `Wrap` in a vertical layout, but `Extend` in \
-                       `ui.horizontal`. The same button behaves differently depending on where \
-                       you put it. `atom_max_width` on an atom switches that atom to truncating \
-                       regardless.",
-            },
-            Note {
-                heading: "Atom::custom leaves a hole for you to paint in",
-                body: "`Atom::custom(id, size)` is an empty atom that takes part in the layout \
-                       like any other. Its rect is only known after layout, so show the button \
-                       with `.atom_ui(ui)` instead of `ui.add(..)`, and ask the response: \
-                       `response.rect(id)`. It returns an Option — `None` when the button was \
-                       not visible and so never painted. Never unwrap it. The outlines on this \
-                       page are drawn the same way: every atom gets an `.atom_id(..)`, which \
-                       asks egui to report its rect and changes nothing else.",
-            },
-            Note {
-                heading: "A screen reader hears every text atom",
-                body: "A Button's accessible name is all of its text atoms joined with spaces, \
-                       so this one is announced as \"🗀 Quarterly report – final.pdf Ctrl+O\" — \
-                       the icon glyph included. An emoji or icon-font glyph is text as far as egui \
-                       is concerned. An `Image` atom is not: an icon drawn as an image stays \
-                       silent. Its alt text is only used when the button has no text at all.",
-            },
+            "everything-atom",
+            "grow",
+            "shrink",
+            "wrap-mode-note",
+            "custom",
+            "screen-reader",
         ]
+    }
+
+    fn retranslate(&mut self, old: Tr<'_>, new: Tr<'_>) {
+        retranslate_text(&mut self.label, "atom-label", old, new);
     }
 
     fn references(&self) -> &'static [&'static str] {
